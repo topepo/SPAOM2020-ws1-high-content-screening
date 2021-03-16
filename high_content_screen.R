@@ -11,10 +11,16 @@ theme_set(theme_bw())
 
 # ------------------------------------------------------------------------------
 
+# http://www.cyto.purdue.edu/cdroms/micro2/content/education/wirth10.pdf
+# https://en.wikipedia.org/wiki/Shape_factor_(image_analysis_and_microscopy)
+# https://forum.image.sc/t/radialcv-explanation/13905
+
+# ------------------------------------------------------------------------------
+
 unneeded <- c('image_number', 'object_number', 'metadata_file_location',
               'metadata_frame', 'metadata_series', 
               'file_name_raw', 'path_name_raw', 'number_object_number',
-              'euler_number', 'image_path')
+              'euler_number', 'image_path', "center_x", "center_y")
 
 process_image <- function(x) {
   x <- image_read(x)
@@ -37,7 +43,7 @@ high_content_screen <-
     treatment = case_when(
       treatment == "matrigel5" ~ "matrigel",
       treatment == "pre2i" ~ "pre2",
-      treatment == "pre2i" ~ "pre2 (cleaned)",
+      treatment == "pre2i_cleaned" ~ "pre2 (cleaned)",
       TRUE ~ "control"
     ),
     treatment = factor(treatment)
@@ -50,6 +56,8 @@ high_content_screen$images <- NULL
 
 # View(high_content_screen)
 
+save(images, high_content_screen, file = "high_content_screen.RData", compress = TRUE)
+
 # ------------------------------------------------------------------------------
 
 cell_rec <- 
@@ -61,14 +69,15 @@ cell_rec <-
 
 # ------------------------------------------------------------------------------
 
-scatter_plots <- function(object, plotly = TRUE, title = NULL) {
+scatter_plots <- function(object, title = NULL, plotly = TRUE) {
   if (plotly) {
     p <- 
       bake(object, new_data = NULL) %>% 
       ggplot(aes(x = .panel_x, y = .panel_y, fill = treatment, colour = treatment)) +
       facet_matrix(vars(-treatment, -id), layer.diag = 2) + 
       geom_point(alpha = 0.5, position = 'auto', aes(text = id)) + 
-      ggtitle(title)
+      ggtitle(title) +
+      theme(legend.position = "top")
     p <- ggplotly(p) 
   } else {
     p <- 
@@ -76,7 +85,8 @@ scatter_plots <- function(object, plotly = TRUE, title = NULL) {
       ggplot(aes(x = .panel_x, y = .panel_y, fill = treatment, colour = treatment)) +
       facet_matrix(vars(-treatment, -id), layer.diag = 2) + 
       geom_point(alpha = 0.5, position = 'auto') + 
-      ggtitle(title)
+      ggtitle(title) +
+      theme(legend.position = "top")
   }
   p
 }
